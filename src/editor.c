@@ -1,16 +1,12 @@
 #include "editor.h"
-#include "CSyntax.h"
-#include<termio.h>
-#include<string.h>
-#include<stdlib.h>
+#include <termio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
+#include "CSyntax.h"
 
-/*
-* getch
-*/
-
-
-FILE *fp;
+char pos[30];
+FILE *fp,*ed_log;
 int indent,LINE=1,nlines=0,num_char=0,MODIFIED=0,ins=-1;
 int rows,cols,copyN=0;
 struct line_t *p[20];
@@ -48,32 +44,45 @@ int isCToken(){
 	return yylex();
 }
 
+/*
+ * Returns true if character is grouping character'
+ *
+ */
+
 int is_grouping(char ch){
-	if(ch=='('||ch=='{')
+	if(ch=='('||ch=='{'||ch=='\"' ||ch=='<')
 		return 1;
-	else 
+	else
 		return 0;
 }
 
+/*
+ * syntax highlighter
+ *
+ */
 void highlightsyntax(int type){
 	int mb=0;
 	for(;mb<w_top;mb++)  printf("%c%c%c",27,'[','D');
 	switch(type){
 		case DATA_TYPE:
-				printf("%s",KRED); 
+				printf("%s",KRED);
 			  	break;
 		case LOOP:
-			       	printf("%s",KGRN); 
+			       	printf("%s",KGRN);
 				break;
-		case NUMBER: 
-				printf("%s",KYEL); 
+		case NUMBER:
+				printf("%s",KYEL);
 			     	break;
-		case LANG_CONSTRUCT: 
-				printf("%s",KBLU); 
+		case LANG_CONSTRUCT:
+				printf("%s",KBLU);
+				break;
+		case RETURN : 
+				printf("%s",KMAG);
 				break;
 	}
 	printf("%s%s",words,KNRM);
 }
+
 
 int getch(){
 	struct termios oldt,newt;
@@ -95,36 +104,44 @@ int getch(){
 int prev(){
 	int type,ind=0;
 	char ch;
+	fprintf(ed_log,"PREV_MODE");
+	if(nlines>0){
+		fprintf(ed_log," nlines %d",nlines);
+		for(;ind<nlines;ind++)
+			free(p[ind]);
+	}
+	nlines = 0;
 	p[nlines]=(struct line_t*)malloc(sizeof(struct line_t));
 	if(!p[nlines]){
 		printf("out of Memory");
-		return 1;
+		
+		exit(0);
 		}
 	p[nlines]->nchar=0;
 
 printf("*----------------------------------------------------------------------------------------------------------------------------------------------------*\n");
 	fseek(fp,0,0);
-	printf("%2d~",LINE);
+//	printf("%2d~",LINE);
 	while(1){
 
 		if((ch=fgetc(fp))==-1) break;
-	
-		
+
+
 		push_word(ch);
 		if(ch==' ' || !isalnum(ch) || is_grouping(ch)){
 			//printf("DDDDD");
 			pop_words();
 			if((type=isCToken())){
-				
+
 				highlightsyntax(type);
 			}
 				clear_word();
-		
+
 		}
 		putchar(ch);
-		
-		
-		
+
+
+
 		//putchar(ch);
 		num_char++;
 		if(num_char>139&&ch!='\n'){
@@ -141,7 +158,7 @@ printf("*-----------------------------------------------------------------------
 			p[nlines]->nchar=cols;
 			cols=0;
 			num_char=0;
-			printf("%2d~",++LINE);
+//			printf("%2d~",++LINE);
 			nlines++;
 			p[nlines]=(struct line_t*)malloc(sizeof(struct line_t));
 			p[nlines]->nchar=0;
@@ -163,23 +180,22 @@ return 0;
 int cmdmode(){
 
 	char ch;
-	system("tput cup 1 3");
+	system("tput cup 1 0");
 	rows=0,cols=0;
 	while(1){
-//	sprintf(pos,"%s%d%d%c%d","tput cup ",rows,' ',cols);
-
-//	system(pos);
+	
 	ch=getch();
+	fprintf(ed_log,"\nLOG : getch read [ESC] %c ",ch);
 	if(ch==':'){
 		system("tput cup 40 0");
-	printf("%140s\r"," ");
-	putchar(ch);
-	ch=getchar();
+		printf("%140s\r"," ");
+		putchar(ch);
+		ch=getchar();
 
-	if(ch=='q'){
+		if(ch=='q'){
 
-	ch=getch();
-  	if(MODIFIED){
+		ch=getch();
+  		if(MODIFIED){
 			system("clear");
 
 			 printf("\n\n\nFile not saved");
@@ -196,8 +212,8 @@ int cmdmode(){
 			}
 		}
 
-	 system("clear");
-	 exit(0);
+	 	system("clear");
+	 	exit(0);
 
 	}
 	if(ch=='w'){
@@ -207,14 +223,17 @@ int cmdmode(){
 	}
 	else if(ch=='i'){
 			insert();
+			edit();
 			return 0;
 		}
 	else if(ch=='e'){
+
+		fprintf(ed_log,"\nLOG : switching ed mode  ");
 		flushtofile();
-		fclose(fp);
+	//	fclose(fp);
 		 edit();
 		}
-	else printf("Invalid editor command");
+		else printf("Invalid editor command");
 	}
 	else if(ch=='a')
 		moveback();
@@ -251,25 +270,22 @@ void edit(){
 	}else if(ch==127)
 		pop(); //backspace : pop and descard the charcter
 	else {
-		
 		push_word(ch);
 		if(ch==' ' || !isalnum(ch) || is_grouping(ch)){
 			//printf("DDDDD");
 			pop_words();
 			if((type=isCToken())){
-				
+
 				highlightsyntax(type);
 			}
 				clear_word();
-		
-		}
+			}
 		putchar(ch);
-		
 		cols++;
 		if(ch=='}') indent--;
 		if(ch=='\t'){ cols+=7; indent++; }
 		if(ch=='\n'){
-			printf("%2d~",++LINE);
+//			printf("%2d~",++LINE);
 			rows=++nlines;
 			p[nlines]=(struct line_t*)malloc(sizeof(struct line_t));
 			if(!p[nlines]) {
@@ -332,7 +348,8 @@ void paste(){
 	p[rows]->lines[0]='\n';
 	p[rows]->nchar=cols+strlen(p[rows]->lines);
 	strcpy(p[rows]->lines+cols+1,buff);
-	printf("\r%2d~%s\r",r,buff);
+	printf("\r%s\r",buff);
+	//printf("\r%2d~%s\r",r,buff);
 }
 }
 void deleteline(){
@@ -351,7 +368,7 @@ void insert(){
 	system("tput cup 38 0");
 	printf("Enter the line number : ");
 	scanf("%d",&ins);
-	printf("\nEnter the text :");
+	printf("\rEnter the text :");
 	getch();
 	fflush(stdin);
 	fgets(buff,sizeof(buff),stdin);
@@ -407,15 +424,15 @@ void pop(){
 		 p[nlines]->nchar=0;
 	}
 }
+
 void moveback(){
 	if(cols>0){
 	printf("%c%c%c",27,'[','D');
-	cols--;
-}
+	cols--;}
 }
 
 void movefront(){
-	if(cols+1<=p[rows]->nchar-1){
+	if(cols+1<p[rows]->nchar-2){
 	cols++;
 	printf("%c%c%c",27,'[','C');
 	}
@@ -423,7 +440,7 @@ void movefront(){
 
 void moveup(){
 	int up=0;
-	system("tput cup 1 2");
+	system("tput cup 0 0");
 	while(up<=rows){ up++;
 		printf("%c%c%c",27,'[','B');
 	}
@@ -439,7 +456,7 @@ void movedown(){
 	printf("%c%c%c",27,'[','B');
 	}
 	if(PASTE){
-	printf("%c%c%c",27,'[','B');
+//	printf("%c%c%c",27,'[','B');
 	 copyN++;
 	}
 }
@@ -453,12 +470,12 @@ void replace(){
 
 void delete(){
 	char ch;
-	short i=0;
+	short i=1;
 	strcpy((p[rows]->lines+cols),(p[rows]->lines+cols+1));
 	p[rows]->lines[--(p[rows]->nchar)]=0;
 	putchar(' ');
 	putchar('\r');
 	while((ch=p[rows]->lines[i++])!='\0') if(ch!='\n') putchar(ch);
-	cols++;
+//	cols++;
 
 }
