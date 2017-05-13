@@ -388,7 +388,7 @@ int flushtofile(){
 		if(ins==i+1) fprintf(fp,"\n%s",buff);
 		if(strlen(p[i]->lines)!=0)
 			fprintf(fp,p[i]->lines);
-			fprintf(fp,"%c",0);
+			fprintf(fp,"\n");
 			fseek(fp,-1,SEEK_CUR);
 	}
 	MODIFIED=0;

@@ -1,0 +1,3 @@
+Simply Edit is a terminal based editor that aims to be easy to use and intuitive, while also taking advantage of full capabilities of modern terminals, like VT100, VT200. As the name indicates, SimplyEdit aims to be somewhat of a successor to the vi and emacs editor but much more simpler to configure and use in a pinch. It also aims to be enjoyable to use full time, whether you work in the terminal because you prefer it, or because you need to(over ssh).
+
+One main motivation of this editor is to keep the keystrokes as low as possible and confine to user's hands in a section of the keyboard whether it is for editing or traversing the code. It is also easily configurable, according to the user's preferences.

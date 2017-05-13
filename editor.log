@@ -3,23 +3,6 @@ PREV_MODE
 LOG : getch read [ESC] : 
 LOG : getch read [ESC] 
  
-LOG : getch read [ESC]  
-LOG : getch read [ESC] w 
-LOG : getch read [ESC] s 
-LOG : getch read [ESC] c 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC] v 
-LOG : getch read [ESC]  
+LOG : getch read [ESC] 
+ 
 LOG : getch read [ESC] : 
